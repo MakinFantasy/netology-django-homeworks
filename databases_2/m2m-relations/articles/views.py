@@ -1,15 +1,19 @@
 from django.views.generic import ListView
-from django.shortcuts import render
-
-from articles.models import Article
+from articles.models import Article, Scopeship
 
 
-def articles_list(request):
-    template = 'articles/news.html'
-    context = {}
-
-    # используйте этот параметр для упорядочивания результатов
-    # https://docs.djangoproject.com/en/2.2/ref/models/querysets/#django.db.models.query.QuerySet.order_by
+class ArticleView(ListView):
+    template_name = 'articles/news.html'
+    model = Article
     ordering = '-published_at'
 
-    return render(request, template, context)
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        object_list = Article.objects.all()
+        context['data'] = object_list
+        context['tags'] = {}
+        for item in object_list:
+            context['tags'][item.id] = {}
+            tags = Scopeship.objects.all().filter(article=item.id).order_by('-is_main', 'scope__topic')
+            context['tags'][item.id] = tags
+        return context
